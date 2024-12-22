@@ -1,0 +1,7 @@
+node_modules
+app/receipts/*
+!app/receipts/.gitkeep
+logs/backend/*
+logs/services/*
+!logs/backend/.gitkeep
+!logs/services/.gitkeep

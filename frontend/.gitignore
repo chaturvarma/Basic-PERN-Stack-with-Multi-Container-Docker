@@ -1,0 +1,8 @@
+node_modules
+build/*
+!build/.gitkeep
+logs/frontend/*
+!logs/frontend/.gitkeep
+logs/nginx/*
+!logs/nginx/.gitkeep
+ssl/

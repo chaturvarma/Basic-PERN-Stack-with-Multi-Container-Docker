@@ -1,0 +1,63 @@
+server {
+    listen 80;
+    server_name www.${SERVER_NAME} ${SERVER_NAME};
+
+    return 301 https://$host$request_uri;
+}
+
+server {
+    listen 443 ssl;
+    server_name www.${SERVER_NAME};
+
+    ssl_certificate /etc/nginx/certs/ssl.crt;
+    ssl_certificate_key /etc/nginx/certs/ssl.key;
+
+    return 301 https://${SERVER_NAME}$request_uri;
+}
+
+server {
+    listen 443 ssl;
+    server_name ${SERVER_NAME};
+
+    ssl_certificate /etc/nginx/certs/ssl.crt;
+    ssl_certificate_key /etc/nginx/certs/ssl.key;
+
+    access_log /var/log/nginx/${SERVER_NAME}_access.log;
+    error_log /var/log/nginx/${SERVER_NAME}_error.log;
+
+    client_body_buffer_size 16K;
+    client_header_buffer_size 1k;
+    client_max_body_size 8m;
+    large_client_header_buffers 4 8k;
+    client_body_in_single_buffer on;
+
+    client_body_timeout 12s;
+    client_header_timeout 12s;
+
+    proxy_buffers 16 4k;
+    proxy_buffer_size 2k;
+
+    proxy_read_timeout 90;
+    proxy_connect_timeout 90;
+
+    location / {
+        proxy_pass http://frontend:3000/;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection "Upgrade";
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+
+    location /api/ {
+        rewrite ^/api(/.*)$ $1 break;
+        proxy_pass ${BACKEND_APP_API_URL};
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_redirect off;
+    }
+}

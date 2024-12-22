@@ -1,0 +1,90 @@
+server {
+    listen 80;
+    server_name www.${SERVER_NAME} ${SERVER_NAME};
+
+    return 301 https://$host$request_uri;
+}
+
+map ${SERVER_ENV} $ssl_cert {
+    1 /etc/nginx/certs/fullchain.pem;
+    0 /etc/nginx/certs/ssl.crt;
+}
+
+map ${SERVER_ENV} $ssl_key {
+    1 /etc/nginx/certs/privkey.pem;
+    0 /etc/nginx/certs/ssl.key;
+}
+
+server {
+    listen 443 ssl;
+    server_name www.${SERVER_NAME};
+
+    ssl_certificate $ssl_cert;
+    ssl_certificate_key $ssl_key;
+
+    return 301 https://${SERVER_NAME}$request_uri;
+}
+
+server {
+    listen 443 ssl;
+    server_name ${SERVER_NAME};
+
+    ssl_certificate $ssl_cert;
+    ssl_certificate_key $ssl_key;
+
+    access_log /var/log/nginx/${SERVER_NAME}_access.log;
+    error_log /var/log/nginx/${SERVER_NAME}_error.log;
+
+    add_header X-Frame-Options SAMEORIGIN;
+    add_header X-Content-Type-Options nosniff;
+    add_header Content-Security-Policy "default-src 'self';";
+    add_header X-Permitted-Cross-Domain-Policies master-only;
+    add_header Referrer-Policy same-origin;
+    add_header X-XSS-Protection "1; mode=block";
+    add_header X-Content-Type-Options nosniff;
+    add_header Strict-Transport-Security "max-age=31536000; includeSubDomains; preload";
+
+    client_body_buffer_size 16K;
+    client_header_buffer_size 1k;
+    client_max_body_size 8m;
+    large_client_header_buffers 4 8k;
+    client_body_in_single_buffer on;
+
+    client_body_timeout 12s;
+    client_header_timeout 12s;
+
+    root /usr/share/nginx/html;
+    index index.html;
+
+    location / {
+        try_files $uri /index.html;
+    }
+
+    location ~* \.(?:ico|gif|jpe?g|png|htc|xml|otf|ttf|eot|woff|woff2|svg)$ {
+        expires 1d;
+        access_log off;
+        log_not_found off;
+        add_header Cache-Control private;
+        open_file_cache max=3000 inactive=120s;
+        open_file_cache_valid 120s;
+        open_file_cache_min_uses 4;
+        open_file_cache_errors on;
+    }
+
+    location ~* \.(css|js|html)$ {
+        expires 12h;
+        access_log on;
+        add_header Cache-Control public;
+    }
+
+    error_page 404 /index.html;
+
+    location /api/ {
+        rewrite ^/api(/.*)$ $1 break;
+        proxy_pass ${BACKEND_APP_API_URL};
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+}

@@ -1,0 +1,13 @@
+FROM nginx:1.21-alpine
+
+RUN apk update && apk add --no-cache dcron logrotate
+
+COPY ./default_dev.template /etc/nginx/conf.d/default_dev.template
+COPY ./nginx_dev.conf /etc/nginx/nginx_dev.conf
+COPY ./entrypoint_dev.sh /usr/local/bin/entrypoint_dev.sh
+COPY ./logrotate.conf /etc/logrotate.d/nginx
+
+RUN chmod +x /usr/local/bin/entrypoint_dev.sh
+
+EXPOSE 80
+ENTRYPOINT ["/bin/sh", "/usr/local/bin/entrypoint_dev.sh"]

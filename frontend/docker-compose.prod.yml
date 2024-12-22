@@ -1,0 +1,20 @@
+version: "3"
+services:
+  frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile.prod
+    ports:
+      - "${NGINX_PORT}:${NGINX_PORT}"
+      - "${NGINX_SSL_PORT}:${NGINX_SSL_PORT}"
+    environment:
+      - NODE_ENV=production
+      - SERVER_NAME=${SERVER_NAME}
+      - SERVER_ENV=${SERVER_ENV}
+      - NGINX_PORT=${NGINX_PORT}
+      - NGINX_SSL_PORT=${NGINX_SSL_PORT}
+      - BACKEND_APP_API_URL=${BACKEND_APP_API_URL}
+    volumes:
+      - ./logs/nginx:/var/log/nginx
+      - ${SSL_LOCATION}:/etc/nginx/certs:ro
+    restart: always

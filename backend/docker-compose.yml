@@ -1,0 +1,40 @@
+version: "3"
+services:
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        NODE_ENV: ${NODE_ENV}
+    ports:
+      - "${PORT}:${PORT}"
+    environment:
+      - NODE_ENV=${NODE_ENV}
+      - RUN_SCRIPT=${RUN_SCRIPT}
+      - WATCHPACK_POLLING=${WATCHPACK_POLLING}
+      - CORS_ORIGIN=${CORS_ORIGIN}
+      - DATABASE_DIALECT=${DATABASE_DIALECT}
+      - DATABASE_HOST=${DATABASE_HOST}
+      - DATABASE_USERNAME=${DATABASE_USERNAME}
+      - DATABASE_PASSWORD=${DATABASE_PASSWORD}
+      - DATABASE_NAME=${DATABASE_NAME}
+      - DATABASE_PORT=${DATABASE_PORT}
+    volumes:
+      - .:/app
+      - ./logs/backend:/app/logs
+    stdin_open: true
+
+  prometheus:
+    image: "prom/prometheus:latest"
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml
+    ports:
+      - "9090:9090"
+    depends_on:
+      - backend
+      - node-exporter
+  
+  node-exporter:
+    image: "prom/node-exporter:latest"
+    ports:
+      - "9100:9100"

@@ -1,0 +1,33 @@
+version: "3"
+services:
+  frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    environment:
+      - WATCHPACK_POLLING=true
+    volumes:
+      - /app/node_modules
+      - .:/app
+      - ./logs/frontend:/app/logs
+    stdin_open: true
+
+  nginx:
+    build:
+      context: ./nginx
+      dockerfile: Dockerfile.dev
+    ports:
+      - "${NGINX_PORT}:${NGINX_PORT}"
+      - "${NGINX_SSL_PORT}:${NGINX_SSL_PORT}"
+    environment:
+      - NGINX_PORT=${NGINX_PORT}
+      - NGINX_SSL_PORT=${NGINX_SSL_PORT}
+      - SERVER_NAME=${SERVER_NAME}
+      - SERVER_ENV=${SERVER_ENV}
+      - FRONTEND_URL=${REACT_APP_API_URL}
+      - BACKEND_APP_API_URL=${BACKEND_APP_API_URL}
+    volumes:
+      - ./logs/nginx:/var/log/nginx
+      - ${SSL_LOCATION}:/etc/nginx/certs:ro
+    depends_on:
+      - frontend
